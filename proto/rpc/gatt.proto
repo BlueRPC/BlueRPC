@@ -1,0 +1,286 @@
+syntax = "proto3";
+
+package rpc;
+option java_multiple_files = true;
+option java_package = "com.bluerpc.rpc";
+
+import "rpc/common.proto";
+
+// ==================== scanning/connecting/pairing ====================
+
+// scan filter types
+enum BLEScanFilterType {
+  // unknown
+  BLE_SCAN_FILTER_TYPE_UNKNOWN = 0;
+  // filter by mac address
+  BLE_SCAN_FILTER_TYPE_MAC = 1;
+  // filter by device name
+  BLE_SCAN_FILTER_TYPE_NAME = 2;
+  // filter by service UUID (only from the advertisement data)
+  BLE_SCAN_FILTER_TYPE_UUID = 3;
+}
+
+// device scan filter
+message BLEScanFilter {
+  // type of filter
+  BLEScanFilterType type = 1;
+  // filtering data
+  string value = 2;
+}
+
+// device scan configuration
+message BLEScanRequest {
+  // scanning interval in miliseconds
+  uint64 interval = 1;
+  // Passive or Active scanning
+  bool active = 2;
+  // scanning filters (a device must match at least one of these filters, all
+  // devices are returned if no filters are specified)
+  repeated BLEScanFilter filters = 3;
+  // if existing filters shoud be kept or overriden
+  bool merge_filters = 4;
+}
+
+// represents the data needed to identify a bluetooth device
+message BLEDevice {
+  // using the mac address
+  string mac = 1;
+  // or using a UUID (macOS)
+  string uuid = 2;
+}
+
+// message representing a scan result for a device
+message BLEScanResponse {
+  // status
+  StatusMessage status = 1;
+  // device information
+  BLEDevice device = 2;
+  // RSSI
+  float rssi = 3;
+  // TX Power
+  float txpwr = 4;
+  // discovered services
+  repeated string service_uuids = 5;
+  // advertisement data
+  repeated BLEAdvertisementData service_data = 6;
+  // advertisement data
+  repeated BLEAdvertisementData manufacturer_data = 7;
+  // timestamp of the discovery
+  uint64 time = 8;
+  // name of the device
+  string name = 9;
+}
+
+// simple key/value message for storing advertisement data
+message BLEAdvertisementData {
+  // key (usually service uuid for BLE)
+  string uuid = 1;
+  // optional associated value
+  bytes value = 2;
+}
+
+// connect request
+message BLEConnectRequest {
+  // device
+  BLEDevice device = 1;
+}
+
+// connect response
+message BLEConnectResponse {
+  // status
+  StatusMessage status = 1;
+  // mtu
+  uint32 mtu = 2;
+}
+
+// pairing request
+message BLEPairingRequest {
+  // device
+  BLEDevice device = 1;
+}
+
+// request for pairing with code
+message BLEPairingCodeRequest {
+  // device
+  BLEDevice device = 1;
+  // code
+  string code = 2;
+}
+
+// message representing the state of the worker connections
+message BLEDevicesResponse {
+  // status
+  StatusMessage status = 1;
+  // maximum number of simultaneous connections allowed (0 if undefined)
+  uint32 max_connections = 2;
+  // list of currently connected devices
+  repeated BLEDevice connected_devices = 3;
+  // if the paired devices list is reliable (=query to the bluetooth system, !=
+  // stored list of previous pairings)
+  bool reliable_paired_list = 4;
+  // list of paired devices
+  repeated BLEDevice paired_devices = 5;
+}
+
+// connection properties
+message BLEConnectionPropertiesResponse {
+  // status
+  StatusMessage status = 1;
+  // rssi
+  float rssi = 2;
+}
+
+// ==================== List Services/Characteristics/Descriptors
+// ====================
+
+// list of Services/Characteristics/Descriptors for a specific device
+message BLEListServicesResponse {
+  // status
+  StatusMessage status = 1;
+  // device
+  BLEDevice device = 2;
+  // services
+  repeated BLEService services = 3;
+}
+
+// BLE Service representation
+message BLEService {
+  // service UUID
+  string uuid = 1;
+  // characteristics associated with this service
+  repeated BLECharacteristic characteristics = 2;
+}
+
+// BLE characteristics properties
+enum BLEChrProperty {
+  // unknown characteristic
+  BLE_CHR_PROPERTY_UNK = 0;
+  // read property
+  BLE_CHR_PROPERTY_READ = 1;
+  // write property
+  BLE_CHR_PROPERTY_WRITE = 2;
+  // notify property
+  BLE_CHR_PROPERTY_NOTIFY = 3;
+  // broadcast property
+  BLE_CHR_PROPERTY_BROADCAST = 4;
+  // extended properties
+  BLE_CHR_PROPERTY_EXTENDED_PROPS = 5;
+  // indicate property
+  BLE_CHR_PROPERTY_INDICATE = 6;
+  // signed write property
+  BLE_CHR_PROPERTY_SIGNED_WRITE = 7;
+  // write without response property
+  BLE_CHR_PROPERTY_WRITE_NO_RESPONSE = 8;
+}
+
+// BLE Characteristic representation
+message BLECharacteristic {
+  // characteristic UUID
+  string uuid = 1;
+  // characteristic properties
+  repeated BLEChrProperty properties = 2;
+  // descriptors associated with this characteristic
+  repeated BLEDescriptor descriptors = 3;
+}
+
+// BLE Descriptor representation
+message BLEDescriptor {
+  // descriptor UUID
+  string uuid = 1;
+}
+
+// ==================== Read/Write ====================
+
+// generic message for returning data
+message BLEReadResponse {
+  // status
+  StatusMessage status = 1;
+  // data
+  bytes data = 2;
+}
+
+// read characteristic
+message BLEReadCharacteristicRequest {
+  // device
+  BLEDevice device = 1;
+  // service uuid
+  string service_uuid = 2;
+  // characteristic uuid
+  string uuid = 3;
+}
+
+// read descriptor
+message BLEReadDescriptorRequest {
+  // device
+  BLEDevice device = 1;
+  // service uuid
+  string service_uuid = 2;
+  // characteristic uuild
+  string characteristic_uuid = 3;
+  // descriptor uuid
+  string uuid = 4;
+}
+
+// BLE writing mode
+enum BLEWriteMode {
+  // default write mode
+  BLE_WRITE_MODE_UNK = 0;
+  // write with no response
+  BLE_WRITE_MODE_NO_RESPONSE = 1;
+  // signed write
+  BLE_WRITE_MODE_SIGNED = 2;
+}
+
+// write characteristic
+message BLEWriteCharacteristicRequest {
+  // device
+  BLEDevice device = 1;
+  // service uuid
+  string service_uuid = 2;
+  // characteristic uuid
+  string uuid = 3;
+  // data
+  bytes data = 4;
+  // mode
+  BLEWriteMode mode = 5;
+}
+
+// read descriptor
+message BLEWriteDescriptorRequest {
+  // device
+  BLEDevice device = 1;
+  // service uuid
+  string service_uuid = 2;
+  // characteristic uuild
+  string characteristic_uuid = 3;
+  // descriptor uuid
+  string uuid = 4;
+  // data
+  bytes data = 5;
+}
+
+// ==================== Notifications ====================
+
+// subscribe/unsubscribe to a characteristic notification
+message BLENotificationRequest {
+  // device
+  BLEDevice device = 1;
+  // service uuid
+  string service_uuid = 2;
+  // characteristic uuid
+  string uuid = 3;
+  // subscribe
+  bool subscribe = 4;
+}
+
+// characteristic notification data
+message BLENotificationResponse {
+  // device
+  BLEDevice device = 1;
+  // service uuid
+  string service_uuid = 2;
+  // characteristic uuid
+  string uuid = 3;
+  // data
+  bytes data = 4;
+}

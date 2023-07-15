@@ -1,0 +1,16 @@
+python/bluerpc/rpc
+python/dist
+python/bluerpc.egg-info
+client/bluerpc_client/rpc
+client/dist
+client/bluerpc.egg-info
+test/rpc
+docs/site
+docs/docs/reference
+__pycache__
+.pytest_cache
+*.pem
+*.srl
+*.pfx
+test/home-assistant/data
+bluerpc.apk*

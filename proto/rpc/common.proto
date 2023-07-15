@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package rpc;
+option java_multiple_files = true;
+option java_package = "com.bluerpc.rpc";
+
+// ==================== hello ====================
+
+// types of workers supported by bluerpc
+enum WorkerType {
+  // unknown worker type
+  WORKER_TYPE_UNKNOWN = 0;
+  // python service worker
+  WORKER_TYPE_PYTHON = 1;
+  // android worker
+  WORKER_TYPE_ANDROID = 2;
+}
+
+// possible worker modes
+enum WorkerMode {
+  // unknown worker mode
+  WORKER_MODE_UNK = 0;
+  // can receive gatt advertisement packets
+  WORKER_MODE_GATT_PASSIVE = 1;
+  // can connect to a device
+  WORKER_MODE_GATT_ACTIVE = 2;
+}
+
+// infos about the client connecting to the worker
+message HelloRequest {
+  // client name
+  string name = 1;
+  // client protocol version
+  string version = 2;
+}
+
+// returns general info on the worker
+message HelloResponse {
+  // worker name
+  string name = 1;
+  // protocol version
+  string version = 2;
+  // uptime of the worker
+  uint64 uptime = 3;
+  // supported modes
+  repeated WorkerMode supported_modes = 4;
+  // worker
+  WorkerType worker_type = 5;
+  // OS
+  string operating_system = 6;
+  // OS Version
+  string operating_system_version = 7;
+  // if BLE filters are required for scanning
+  bool ble_filters_required = 8;
+  // bluetooth adapter mac address
+  string bt_mac = 9;
+  // netwrok adapter mac address
+  string net_mac = 10;
+  // unique identifier for each worker
+  string uid = 11;
+}
+
+// ==================== status ====================
+
+// status message
+message StatusMessage {
+  // error status
+  ErrorCode code = 1;
+  // error description
+  string message = 2;
+}
+
+// possible error codes
+enum ErrorCode {
+  // not specified
+  ERROR_CODE_UNK = 0;
+  // OK
+  ERROR_CODE_OK = 1;
+  // an unknown error occured
+  ERROR_CODE_ERROR = 2;
+  // device not available / cannot be found
+  ERROR_CODE_UNAVAILABLE = 3;
+  // failed to connect to the device
+  ERROR_CODE_CONNECTION_FAILED = 4;
+  // the specified sevice is unknown
+  ERROR_CODE_UNKNOWN_SERVICE = 5;
+  // the specified characteristic is unknown
+  ERROR_CODE_UNKNOWN_CHARACTERISTIC = 6;
+  // the specified descriptor is unknown
+  ERROR_CODE_UNKNOWN_DESCRIPTOR = 7;
+  // the requested action is not supported
+  ERROR_CODE_UNSUPPORTED = 8;
+  // supplied connection settings are invalid
+  ERROR_CODE_INVALID_CONNECTION_SETTINGS = 9;
+  // device is already connected
+  ERROR_CODE_ALREADY_CONNECTED = 10;
+  // another app is already using this device
+  ERROR_CODE_DEVICE_BUSY = 11;
+  // connection is required (ex: for pairing)
+  ERROR_CODE_CONNECTION_REQUIRED = 12;
+  // pairing code is required
+  ERROR_CODE_PAIRING_CODE_REQUIRED = 13;
+  // if scan filters are mandatory (12.0 >= macOS < 12.3, android > 8)
+  ERROR_CODE_SCAN_FILTERS_REQUIRED = 14;
+  // scan already running
+  ERROR_CODE_SCAN_ALREADY_RUNNING = 15;
+  // scan stopped
+  ERROR_CODE_SCAN_STOPPED = 16;
+}
+
+// empty message
+message Void {
+}

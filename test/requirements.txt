@@ -1,0 +1,6 @@
+protobuf
+grpcio
+grpcio-tools
+pytest
+pytest-asyncio
+cryptography

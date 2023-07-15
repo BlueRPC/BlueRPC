@@ -1,0 +1,9 @@
+bluetooth-adapters
+protobuf
+grpcio
+grpcio-tools
+grpc-interceptor
+bleak
+cryptography
+netifaces
+zeroconf

@@ -1,0 +1,44 @@
+site_name: BlueRPC
+repo_url: https://github.com/BlueRPC/BlueRPC
+repo_name: BlueRPC/BlueRPC
+extra:
+  homepage: https://bluerpc.github.io
+
+plugins:
+  - search
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+      primary: blue
+      accent: light-blue
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+      primary: blue
+      accent: light-blue
+
+  icon:
+    repo: fontawesome/brands/git-alt 
+    logo: fontawesome/brands/bluetooth
+  features:
+    - navigation.sections
+
+markdown_extensions:
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences

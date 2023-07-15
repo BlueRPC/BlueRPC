@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package rpc;
+option java_multiple_files = true;
+option java_package = "com.bluerpc.rpc";
+
+import "rpc/common.proto";
+import "rpc/gatt.proto";
+
+// main service
+service BlueRPC {
+  // first request after connection, returns general infos about the worker
+  rpc Hello(HelloRequest) returns (HelloResponse);
+
+  // ==================== Gatt ====================
+
+  // start a scanner
+  rpc BLEScanStart(BLEScanRequest) returns (StatusMessage);
+  // stop the scanner
+  rpc BLEScanStop(Void) returns (StatusMessage);
+
+  // connect
+  rpc BLEConnect(BLEConnectRequest) returns (BLEConnectResponse);
+  // disconnect
+  rpc BLEDisconnect(BLEDevice) returns (StatusMessage);
+  // pair
+  rpc BLEPair(BLEPairingRequest) returns (StatusMessage);
+  // pairing code (should be called after BLEPair when
+  // ERROR_CODE_PAIRING_CODE_REQUIRED is returned)
+  rpc BLEPairCode(BLEPairingCodeRequest) returns (StatusMessage);
+  // unpair
+  rpc BLEUnpair(BLEDevice) returns (StatusMessage);
+  // get a list of connected and paired devices
+  rpc BLEGetDevices(Void) returns (BLEDevicesResponse);
+  // get connection properties
+  rpc BLEGetConnectionProperties(BLEDevice)
+      returns (BLEConnectionPropertiesResponse);
+
+  // list services, characteristics and descriptors for a device
+  rpc BLEListServices(BLEDevice) returns (BLEListServicesResponse);
+  // read characteristic
+  rpc BLEReadCharacteristic(BLEReadCharacteristicRequest)
+      returns (BLEReadResponse);
+  // read descriptor
+  rpc BLEReadDescriptor(BLEReadDescriptorRequest) returns (BLEReadResponse);
+  // write characteristic
+  rpc BLEWriteCharacteristic(BLEWriteCharacteristicRequest)
+      returns (StatusMessage);
+  // write descriptor
+  rpc BLEWriteDescriptor(BLEWriteDescriptorRequest) returns (StatusMessage);
+
+  // subscribe or unsubscribe to a characteristic notification
+  rpc BLENotification(BLENotificationRequest) returns (StatusMessage);
+  // global method to receive all the subscribed notifications
+  rpc BLEReceiveNotifications(Void) returns (stream BLENotificationResponse);
+  // global method to receive disconnect notifications
+  rpc BLEReceiveDisconnect(Void) returns (stream BLEDevice);
+  // global method to receive scan results
+  rpc BLEReceiveScan(Void) returns (stream BLEScanResponse);
+}

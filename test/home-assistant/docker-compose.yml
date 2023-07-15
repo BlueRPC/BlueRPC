@@ -1,0 +1,15 @@
+version: '3'
+services:
+  homeassistant_test:
+    #image: homeassistant/home-assistant:2023.4
+    build: .
+    volumes:
+      - ./data:/config
+      #- site-packages:/usr/local/lib/python3.10/site-packages
+      - ./configuration.yaml:/config/configuration.yaml
+      - ../../hass/custom_components/bluerpc:/config/custom_components/bluerpc
+    environment:
+      - TZ=Europe/Paris
+    restart: unless-stopped
+    ports:
+      - 8124:8123
