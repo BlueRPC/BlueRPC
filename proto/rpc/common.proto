@@ -60,6 +60,16 @@ message HelloResponse {
   string uid = 11;
 }
 
+// request to set the keystore for the bluerpc server
+message SetKeystoreRequest {
+  // keystore content
+  bytes data = 1;
+  // overwrite if exists
+  bool overwrite = 2;
+  // if we should restart the worker to apply settings
+  bool apply = 3;
+}
+
 // ==================== status ====================
 
 // status message
@@ -106,6 +116,8 @@ enum ErrorCode {
   ERROR_CODE_SCAN_ALREADY_RUNNING = 15;
   // scan stopped
   ERROR_CODE_SCAN_STOPPED = 16;
+  // keystore already exists
+  ERROR_CODE_KEYSTORE_ALREADY_EXISTS = 17;
 }
 
 // empty message

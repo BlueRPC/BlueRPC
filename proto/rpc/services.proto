@@ -11,6 +11,8 @@ import "rpc/gatt.proto";
 service BlueRPC {
   // first request after connection, returns general infos about the worker
   rpc Hello(HelloRequest) returns (HelloResponse);
+  // request to set the keystore of the woker (user will need to provide the password on the worker)
+  rpc SetKeystore(SetKeystoreRequest) returns (StatusMessage);
 
   // ==================== Gatt ====================
 

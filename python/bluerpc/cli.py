@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import logging
+import os
 import signal
 import socket
 import sys
@@ -10,7 +11,7 @@ from bluerpc.discovery import start_discovery
 from bluerpc.log import AsyncLoggingInterceptor
 from bluerpc.rpc import services_pb2_grpc
 from bluerpc.service import BlueRPCService
-from bluerpc.utils import find_adapter_by_address, list_adapters_mac
+from bluerpc.utils import find_adapter_by_address, get_appdata_dir, list_adapters_mac
 from cryptography.hazmat.primitives.serialization import (
     Encoding,
     NoEncryption,
@@ -24,7 +25,8 @@ _LOGGER = logging.getLogger("bluerpc")
 async def serve(
     bind_addr="[::]:50052",
     name="unknown",
-    keystore=None,
+    keystore=get_appdata_dir().joinpath("keystore.pfx"),
+    keystore_password=None,
     adapter_mac="00:00:00:00:00:00",
     adapter_id=None,
 ) -> None:
@@ -35,22 +37,24 @@ async def serve(
         bind_addr: the gRPC server bind address
         name: the worker name
         keystore: path to a PKCS12 keystore (used for encryption)
+        keystore_password: password for the keystore, leave to None to disable encryption
         adapter: adapter mac address
     """
     server = grpc.aio.server(interceptors=[AsyncLoggingInterceptor()])
     services_pb2_grpc.add_BlueRPCServicer_to_server(
         BlueRPCService(name, adapter_mac, adapter_id), server
     )
-    encrypted = False
 
-    if keystore is not None:
+    if keystore and os.path.exists(keystore) and keystore_password:
         try:
             with open(keystore, "rb") as f:
                 (
                     private_key,
                     certificate,
                     additional_certificates,
-                ) = pkcs12.load_key_and_certificates(f.read(), b"")
+                ) = pkcs12.load_key_and_certificates(
+                    f.read(), keystore_password.encode("utf-8")
+                )
             creds = grpc.ssl_server_credentials(
                 [
                     (
@@ -63,9 +67,8 @@ async def serve(
                 additional_certificates[0].public_bytes(Encoding.PEM),
             )
             server.add_secure_port(bind_addr, creds)
-            encrypted = True
         except FileNotFoundError:
-            _LOGGER.warn("keystore not found, starting with insecure mode")
+            _LOGGER.warn("keystore not found, starting in insecure mode")
             server.add_insecure_port(bind_addr)
     else:
         server.add_insecure_port(bind_addr)
@@ -73,7 +76,7 @@ async def serve(
     await server.start()
     _LOGGER.info(f"BlueRPC worker running on {bind_addr}")
 
-    await start_discovery(bind_addr, name, encrypted, adapter_mac)
+    await start_discovery(bind_addr, name, adapter_mac)
 
     await server.wait_for_termination()
 
@@ -108,7 +111,24 @@ def run():
         nargs="?",
     )
     parser.add_argument(
-        "--keystore", type=str, help="path to the keystore", default=None, nargs="?"
+        "--keystore",
+        type=str,
+        help="path to the keystore",
+        default=get_appdata_dir().joinpath("keystore.pfx"),
+        nargs="?",
+    )
+    parser.add_argument(
+        "--keystore-password",
+        type=str,
+        help="keystore password",
+        default=None,
+        nargs="?",
+    )
+    parser.add_argument(
+        "--insecure",
+        help="force to start in insecure mode",
+        action="store_true",
+        default=False,
     )
     parser.add_argument(
         "--debug", action="store_true", help="enable debug logs", default=False
@@ -146,5 +166,12 @@ def run():
         if args.adapter:
             adapter_id = find_adapter_by_address(args.adapter)
         asyncio.new_event_loop().run_until_complete(
-            serve(args.bind_addr, args.name, args.keystore, args.adapter, adapter_id)
+            serve(
+                args.bind_addr,
+                args.name,
+                args.keystore,
+                (args.keystore_password if not args.insecure else None),
+                args.adapter,
+                adapter_id,
+            )
         )

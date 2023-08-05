@@ -50,25 +50,31 @@ message BLEDevice {
 }
 
 // message representing a scan result for a device
+message BLEScanResponseData {
+  // device information
+  BLEDevice device = 1;
+  // RSSI
+  float rssi = 2;
+  // TX Power
+  float txpwr = 3;
+  // discovered services
+  repeated string service_uuids = 4;
+  // advertisement data
+  repeated BLEAdvertisementData service_data = 5;
+  // advertisement data
+  repeated BLEAdvertisementData manufacturer_data = 6;
+  // timestamp of the discovery
+  uint64 time = 7;
+  // name of the device
+  string name = 8;
+}
+
+// message representing a scan result for a device or more
 message BLEScanResponse {
   // status
   StatusMessage status = 1;
-  // device information
-  BLEDevice device = 2;
-  // RSSI
-  float rssi = 3;
-  // TX Power
-  float txpwr = 4;
-  // discovered services
-  repeated string service_uuids = 5;
-  // advertisement data
-  repeated BLEAdvertisementData service_data = 6;
-  // advertisement data
-  repeated BLEAdvertisementData manufacturer_data = 7;
-  // timestamp of the discovery
-  uint64 time = 8;
-  // name of the device
-  string name = 9;
+  // data
+  repeated BLEScanResponseData data = 2;
 }
 
 // simple key/value message for storing advertisement data

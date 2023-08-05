@@ -5,7 +5,7 @@ import time
 from typing import Dict, List
 
 from bleak import AdvertisementData, BleakScanner, BLEDevice
-from bluerpc.rpc import common_pb2, gatt_pb2
+from bluerpc.rpc import gatt_pb2
 from bluerpc.utils import get_kwargs, validate_mac
 
 
@@ -22,6 +22,7 @@ class BLEScanner:
         self._scanFilters = {}
         self._scan_data = None
         self._adapter = adapter
+        self.interval = 1
 
     def check_filters(self, device: BLEDevice) -> bool:
         """
@@ -79,8 +80,7 @@ class BLEScanner:
             d = gatt_pb2.BLEDevice(mac=device.address)
         else:
             d = gatt_pb2.BLEDevice(uuid=device.address)
-        dev = gatt_pb2.BLEScanResponse(
-            status=common_pb2.StatusMessage(code=common_pb2.ERROR_CODE_OK),
+        dev = gatt_pb2.BLEScanResponseData(
             device=d,
             rssi=advertisement_data.rssi,
             name=device.name,
@@ -96,16 +96,18 @@ class BLEScanner:
                 i.get_nowait()
                 i.put_nowait(dev)
 
-    async def scan(self, active: bool, filters: List[gatt_pb2.BLEScanFilter]) -> None:
+    async def scan(self, active: bool, interval: int, filters: List[gatt_pb2.BLEScanFilter]) -> None:
         """
         Start scanner method
 
         Args:
             active: if the scanner should be in active or passive mode
+            interval: interval to send messages
             filters: list of filters to apply for scanning, services uuid are processed directly by bleak, others are post-processed
         """
         self._scan_data = (active, filters)
         self.running = True
+        self.interval = interval
         self._scanFilters = {}
         svc_filters = []
         for i in filters:

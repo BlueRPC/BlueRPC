@@ -1,5 +1,7 @@
 import asyncio
+import os
 import platform
+import sys
 import time
 
 import grpc
@@ -16,11 +18,12 @@ class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
     Implementation of the BlueRPCService
     """
 
-    def __init__(self, name, adapter_mac="00:00:00:00:00:00", adapter_id=None) -> None:
+    def __init__(self, name, adapter_mac="00:00:00:00:00:00", adapter_id=None, keystore_path="") -> None:
         super().__init__()
         self._name = name
         self._adapter_mac = adapter_mac
         self._ble_scanner = BLEScanner(adapter_id)
+        self._keystore_path = keystore_path
         BLEConn.set_scanner(self._ble_scanner)
         BLEConn.set_adapter(adapter_id)
 
@@ -44,11 +47,33 @@ class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
             uid=(self._adapter_mac == "00:00:00:00:00:00" or net_mac).replace(":", ""),
         )
 
+    async def SetKeystore(self, request: common_pb2.SetKeystoreRequest, context: grpc.aio.ServicerContext) -> common_pb2.StatusMessage:
+        if os.path.exists(self._keystore_path) and not request.overwrite:
+            return common_pb2.StatusMessage(
+                code=common_pb2.ERROR_CODE_KEYSTORE_ALREADY_EXISTS
+            )
+        try:
+            with open(self._keystore_path, "wb") as f:
+                f.write(request.data)
+        except Exception as e:
+            return common_pb2.StatusMessage(
+                code=common_pb2.ERROR_CODE_ERROR,
+                message=str(e)
+            )
+        if request.apply:
+            asyncio.get_event_loop().call_later(2, self.restart)
+        return common_pb2.StatusMessage(
+            code=common_pb2.ERROR_CODE_OK
+        )
+
+    def restart(self):
+        os.execv(sys.executable, ['python'] + sys.argv)
+
     async def BLEScanStart(
         self, request: gatt_pb2.BLEScanRequest, context: grpc.aio.ServicerContext
     ) -> common_pb2.StatusMessage:
         if not self._ble_scanner.running:
-            await self._ble_scanner.scan(request.active, request.filters)
+            await self._ble_scanner.scan(request.active, request.interval, request.filters)
             return common_pb2.StatusMessage(code=common_pb2.ERROR_CODE_OK)
         else:
             return common_pb2.StatusMessage(
@@ -175,7 +200,17 @@ class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
         BLEScanner.scan_queues[context.peer()] = asyncio.Queue(20)
         context.add_done_callback(self.rpc_scan_disconnect)
         while self._ble_scanner.running:
-            yield await BLEScanner.scan_queues[context.peer()].get()
+            data = []
+            try:
+                while True:
+                    data.append((await BLEScanner.scan_queues[context.peer()].get_nowait()))
+            except asyncio.QueueEmpty:
+                pass
+            yield gatt_pb2.BLEScanResponse(
+                status=common_pb2.StatusMessage(code=common_pb2.ERROR_CODE_OK),
+                data=data
+            )
+            await asyncio.sleep(self._ble_scanner.interval)
         yield gatt_pb2.BLEScanResponse(
             status=common_pb2.StatusMessage(code=common_pb2.ERROR_CODE_SCAN_STOPPED)
         )
