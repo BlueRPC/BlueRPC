@@ -12,7 +12,7 @@ You can install this integration using [HACS](https://hacs.xyz/):
 
 ## Configuration
 
-When you add a new instance of the BlueRPC integration, you will need to fill in the IP address of the worker, the port (by default 50052 for python and 5052 for android) and the name of the worker. 
+When you add a new instance of the BlueRPC integration, you will need to fill in the IP address of the worker, the port (by default 5052) and the name of the worker. 
 
 If autodiscovery is enabled, the workers will be detected automatically and you will just need to click the "configure" button to add them.
 

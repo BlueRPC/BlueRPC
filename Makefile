@@ -5,10 +5,10 @@ PIP = pip3
 all: clean lint proto build certs
 lint: proto-lint python-lint client-lint
 proto: proto-lint python-proto test-proto client-proto android-proto
-build: python-build docs-build android-build
+build: python-build docs-build android-build client-build
 docs: docs-clean docs-gen docs-build
 deps: deps-debian deps-python deps-finish
-clean: python-clean test-clean docs-clean
+clean: python-clean test-clean docs-clean client-clean
 
 FORCE:
 
@@ -82,10 +82,20 @@ client-proto: proto/*
 	$(PYTHON) -m grpc_tools.protoc --python_out=client/bluerpc_client --grpc_python_out=client/bluerpc_client --proto_path=proto $(FILES)
 	find client/bluerpc_client/rpc -type f | xargs sed -i 's/from rpc import/from . import/g'
 
-client-lint: client/bluerpc_client/*
+client-lint: client/*
 	isort client/bluerpc_client/ --check --profile=black --skip=rpc
 	black --check client/bluerpc_client/ --exclude=rpc
-	flake8 client/bluerpc_client/ --ignore=E501,W503 --exclude=rpc
+	flake8 client/bluerpc_client/ --ignore=E501,W503 --exclude=rpc,__init__.py
+
+client-build: client-lint client-proto
+	cd client && python3 -m build
+
+client-docs: client/*
+	mkdir -p docs/docs/reference/client
+	$(PYTHON) docs/client.py
+
+client-clean: client/*
+	rm -rf client/bluerpc_client/rpc
 
 # Tests
 
@@ -97,7 +107,7 @@ test-clean: test/*
 
 # Docs
 
-docs-gen: proto-docs python-docs android-docs
+docs-gen: proto-docs python-docs android-docs client-docs
 
 docs-serve:
 	cd docs && mkdocs serve --strict

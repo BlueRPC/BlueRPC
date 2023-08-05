@@ -55,6 +55,13 @@ jobs:
           password: ${{ secrets.PYPI_BLUERPC_API_TOKEN }}
           packages_dir: python/dist/
 
+      - name: Publish client python package
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_BLUERPC_CLIENT_API_TOKEN }}
+          packages_dir: client/dist/
+
       - name: Deploy Docs
         env:
           DEPLOYER_TOKEN: ${{ secrets.DEPLOYER_TOKEN }}

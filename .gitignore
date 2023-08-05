@@ -3,7 +3,7 @@ python/dist
 python/bluerpc.egg-info
 client/bluerpc_client/rpc
 client/dist
-client/bluerpc.egg-info
+client/bluerpc_client.egg-info
 test/rpc
 docs/site
 docs/docs/reference

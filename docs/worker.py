@@ -7,7 +7,7 @@ generate_docs(
     ["bluerpc"],
     output_path="./docs/docs/reference/python",
     ignored_modules=["bluerpc.rpc"],
-    src_base_url="https://github.com/BlueRPC/BlueRPC/python/",
+    src_base_url="https://github.com/BlueRPC/BlueRPC/blob/main/python/",
     src_root_path="python/",
     remove_package_prefix=True
 )
