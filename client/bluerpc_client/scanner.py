@@ -134,8 +134,8 @@ class BlueRPCBLEAdvertisement:
     rssi: float
     txpwr: float
     service_uuids: List[str]
-    service_data: Dict[str, bytes] = {}
-    manufacturer_data: Dict[int, bytes] = {}
+    service_data: Dict[str, bytes]
+    manufacturer_data: Dict[int, bytes]
 
     def __init__(self, resp: gatt_pb2.BLEScanResponseData):
         self.name = resp.name
@@ -143,7 +143,9 @@ class BlueRPCBLEAdvertisement:
         self.rssi = resp.rssi
         self.txpwr = resp.txpwr
         self.service_uuids = list(resp.service_uuids)
+        self.service_data = {}
         for i in resp.service_data:
             self.service_data[i.uuid] = bytes(i.value)
+        self.manufacturer_data = {}
         for i in resp.manufacturer_data:
             self.manufacturer_data[i.uuid] = bytes(i.value)
