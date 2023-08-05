@@ -3,11 +3,12 @@ package com.bluerpc.worker
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
-import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.ContextCompat
 import com.bluerpc.rpc.BLEConnectRequest
 import com.bluerpc.rpc.BLEConnectResponse
 import com.bluerpc.rpc.BLEConnectionPropertiesResponse
@@ -29,11 +30,14 @@ import com.bluerpc.rpc.BlueRPCGrpc.BlueRPCImplBase
 import com.bluerpc.rpc.ErrorCode
 import com.bluerpc.rpc.HelloRequest
 import com.bluerpc.rpc.HelloResponse
+import com.bluerpc.rpc.SetKeystoreRequest
 import com.bluerpc.rpc.StatusMessage
 import com.bluerpc.rpc.Void
 import com.bluerpc.rpc.WorkerMode
 import com.bluerpc.rpc.WorkerType
 import io.grpc.stub.StreamObserver
+import java.io.File
+import java.io.FileOutputStream
 import java.net.NetworkInterface
 import java.util.Collections
 
@@ -88,6 +92,60 @@ class BlueRPCService(private val ctx: Context): BlueRPCImplBase() {
         if (responseObserver != null) {
             responseObserver.onNext(resp)
             responseObserver.onCompleted()
+        }
+    }
+
+    /**
+     * set the keystore
+     */
+    override fun setKeystore(
+        request: SetKeystoreRequest?,
+        responseObserver: StreamObserver<StatusMessage>?
+    ) {
+        if(request != null) {
+            var ksPath = sharedPref.getString(Const.CFG_TLS_KEYSTORE, Const.CFG_TLS_KEYSTORE_DEFAULT)
+            if(ksPath != Const.CFG_TLS_KEYSTORE_DEFAULT) {
+                // if path is external, we can't write to it
+                if(!request.overwrite) {
+                    // if overwrite not allowed return
+                    responseObserver?.onNext(
+                        StatusMessage.newBuilder()
+                            .setCode(ErrorCode.ERROR_CODE_KEYSTORE_ALREADY_EXISTS).build()
+                    )
+                    responseObserver?.onCompleted()
+                    return
+                } else {
+                    // else, reset keystore path to internal storage
+                    with(sharedPref.edit()) {
+                        putString(Const.CFG_TLS_KEYSTORE, Const.CFG_TLS_KEYSTORE_DEFAULT)
+                    }
+                }
+            }
+            val ksFile = File(ctx.filesDir.path + "/bluerpc.p12")
+
+            if(ksFile.exists()) {
+                if (!request.overwrite) {
+                    responseObserver?.onNext(
+                        StatusMessage.newBuilder()
+                            .setCode(ErrorCode.ERROR_CODE_KEYSTORE_ALREADY_EXISTS).build()
+                    )
+                    responseObserver?.onCompleted()
+                    return
+                }
+            } else {
+                ksFile.createNewFile()
+            }
+            val fos = FileOutputStream(ksFile)
+            fos.write(request.data.toByteArray())
+            fos.close()
+
+            responseObserver?.onNext(StatusMessage.newBuilder().setCode(ErrorCode.ERROR_CODE_OK).build())
+            responseObserver?.onCompleted()
+
+            if(request.apply) {
+                ctx.stopService(Intent(ctx, ForegroundService::class.java))
+                ContextCompat.startForegroundService(ctx, Intent(ctx, ForegroundService::class.java))
+            }
         }
     }
 

@@ -44,5 +44,10 @@ object Const {
      * Path to the keystore
      */
     const val CFG_TLS_KEYSTORE = "keystore"
-    const val CFG_TLS_KEYSTORE_DEFAULT = ""
+    const val CFG_TLS_KEYSTORE_DEFAULT = "INTERNAL_STORAGE"
+
+    /**
+     * Keystore Password
+     */
+    const val CFG_TLS_KEYSTORE_PASSWORD = "keystorePassword"
 }

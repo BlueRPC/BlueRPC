@@ -102,17 +102,61 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:layout_marginHorizontal="30dp"
-                android:text="Enable TLS"
-                android:enabled="false"/>
+                android:text="Enable TLS" />
 
-            <Button
-                android:layout_width="wrap_content"
+
+            <GridLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Select Keystore"
                 android:layout_marginTop="20dp"
-                android:layout_marginHorizontal="30dp"
-                android:id="@+id/pickKeystore"
-                />
+                android:rowCount="4"
+                android:columnCount="2"
+                android:layout_marginHorizontal="30dp">
+
+                <TextView
+                    android:layout_width="125dp"
+                    android:layout_height="match_parent"
+                    android:text="Keystore Password"
+                    android:textAlignment="center" />
+
+                <EditText
+                    android:layout_width="180dp"
+                    android:layout_height="match_parent"
+                    android:id="@+id/keystorePassword" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select Keystore"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginHorizontal="30dp"
+                    android:id="@+id/pickKeystore"
+                    />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reset Keystore"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginHorizontal="30dp"
+                    android:id="@+id/resetKeystore"
+                    />
+
+                <TextView
+                    android:layout_width="125dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="18dp"
+                    android:text="Keystore Path:"
+                    android:textAlignment="center" />
+
+                <TextView
+                    android:layout_width="125dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="18dp"
+                    android:text=""
+                    android:id="@+id/keystorePath"
+                    android:textAlignment="center" />
+            </GridLayout>
 
             <Button
                 android:layout_width="wrap_content"

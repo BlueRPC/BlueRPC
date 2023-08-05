@@ -71,61 +71,68 @@ class BLEScanner {
     private val scanCallback = object:ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            addResult(result)
+            addResults(listOf(result))
         }
 
         override fun onBatchScanResults(results: List<ScanResult?>) {
-            for (r in results) {
-                if(r != null)
-                    addResult(r)
-            }
+            addResults(results)
         }
 
         @SuppressLint("MissingPermission")
-        private fun addResult(r: ScanResult) {
-            val builder = BLEScanResponse.newBuilder()
-                .setName(r.device.name ?: "")
-                .setTxpwr(r.txPower.toFloat())
-                .setRssi(r.rssi.toFloat())
-                .setDevice(BLEDevice.newBuilder().setMac(r.device.address).build())
-                .setTime(System.currentTimeMillis()/1000)
-                .setStatus(StatusMessage.newBuilder().setCode(ErrorCode.ERROR_CODE_OK).build())
+        private fun addResults(results: List<ScanResult?>) {
+            val data = arrayListOf<BLEScanResponseData>()
+            for(r in results) {
+                if(r == null)
+                    continue
 
-            if(r.scanRecord != null) {
-                if(r.scanRecord!!.serviceUuids != null)
-                    builder.addAllServiceUuids(r.scanRecord!!.serviceUuids!!.map { it.toString() })
+                val builder = BLEScanResponseData.newBuilder()
+                    .setName(r.device.name ?: "")
+                    .setTxpwr(r.txPower.toFloat())
+                    .setRssi(r.rssi.toFloat())
+                    .setDevice(BLEDevice.newBuilder().setMac(r.device.address).build())
+                    .setTime(System.currentTimeMillis()/1000)
 
-                val svData = arrayListOf<BLEAdvertisementData>()
-                if(r.scanRecord!!.serviceData != null) {
-                    r.scanRecord!!.serviceData!!.forEach {
-                        svData.add(
-                            BLEAdvertisementData
+                if(r.scanRecord != null) {
+                    if(r.scanRecord!!.serviceUuids != null)
+                        builder.addAllServiceUuids(r.scanRecord!!.serviceUuids!!.map { it.toString() })
+
+                    val svData = arrayListOf<BLEAdvertisementData>()
+                    if(r.scanRecord!!.serviceData != null) {
+                        r.scanRecord!!.serviceData!!.forEach {
+                            svData.add(
+                                BLEAdvertisementData
+                                    .newBuilder()
+                                    .setUuid(it.key.toString())
+                                    .setValue(ByteString.copyFrom(it.value))
+                                    .build()
+                            )
+                        }
+                    }
+                    builder.addAllServiceData(svData)
+
+                    val mfData = arrayListOf<BLEAdvertisementData>()
+                    if(r.scanRecord!!.manufacturerSpecificData != null) {
+                        for (i in 0 until r.scanRecord!!.manufacturerSpecificData!!.size()) {
+                            mfData.add(BLEAdvertisementData
                                 .newBuilder()
-                                .setUuid(it.key.toString())
-                                .setValue(ByteString.copyFrom(it.value))
+                                .setUuid(r.scanRecord!!.manufacturerSpecificData!!.keyAt(i).toString())
+                                .setValue(ByteString.copyFrom(r.scanRecord!!.manufacturerSpecificData!!.valueAt(i)))
                                 .build()
-                        )
+                            )
+                        }
                     }
+                    builder.addAllManufacturerData(mfData)
                 }
-                builder.addAllServiceData(svData)
-
-                val mfData = arrayListOf<BLEAdvertisementData>()
-                if(r.scanRecord!!.manufacturerSpecificData != null) {
-                    for (i in 0 until r.scanRecord!!.manufacturerSpecificData!!.size()) {
-                        mfData.add(BLEAdvertisementData
-                            .newBuilder()
-                            .setUuid(r.scanRecord!!.manufacturerSpecificData!!.keyAt(i).toString())
-                            .setValue(ByteString.copyFrom(r.scanRecord!!.manufacturerSpecificData!!.valueAt(i)))
-                            .build()
-                        )
-                    }
-                }
-                builder.addAllManufacturerData(mfData)
+                data.add(builder.build())
             }
-            val resp = builder.build()
             for (o in observers) {
                 try {
-                    o.onNext(resp)
+                    o.onNext(
+                        BLEScanResponse.newBuilder()
+                            .addAllData(data)
+                            .setStatus(StatusMessage.newBuilder().setCode(ErrorCode.ERROR_CODE_OK).build())
+                            .build()
+                    )
                 } catch (e: java.lang.Exception) {
                     // remove when disconnected
                     observers.remove(o)

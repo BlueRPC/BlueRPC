@@ -31,6 +31,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.name.setText(sharedPref.getString(Const.CFG_NAME, Build.MODEL))
         binding.port.setText(sharedPref.getInt(Const.CFG_PORT, Const.CFG_PORT_DEFAULT).toString())
         binding.mdns.isChecked = sharedPref.getBoolean(Const.CFG_ENABLE_MDNS, Const.CFG_ENABLE_MDS_DEFAULT)
+        binding.keystorePath.text = sharedPref.getString(Const.CFG_TLS_KEYSTORE, Const.CFG_TLS_KEYSTORE_DEFAULT)
+        binding.keystorePassword.setText(sharedPref.getString(Const.CFG_TLS_KEYSTORE_PASSWORD, ""))
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             binding.disableBattery.visibility = View.VISIBLE
@@ -71,6 +73,10 @@ class SettingsActivity : AppCompatActivity() {
             ))
         }
 
+        binding.resetKeystore.setOnClickListener {
+            binding.keystorePath.text = Const.CFG_TLS_KEYSTORE_DEFAULT
+        }
+
     }
 
     /**
@@ -95,11 +101,7 @@ class SettingsActivity : AppCompatActivity() {
      */
     private val openKSLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { result ->
         with(sharedPref.edit()) {
-            putString(Const.CFG_TLS_KEYSTORE, result.toString())
-            if(!binding.tls.isEnabled) {
-                binding.tls.isEnabled = true
-                binding.tls.isChecked = sharedPref.getBoolean(Const.CFG_TLS_ENABLE, Const.CFG_TLS_ENABLE_DEFAULT)
-            }
+            binding.keystorePath.text = result.toString()
         }
     }
 
@@ -117,6 +119,8 @@ class SettingsActivity : AppCompatActivity() {
             else if(binding.forceScreenOn.isChecked)
                 x = Const.CFG_SCANNING_MODE_SCREEN_ON
             putInt(Const.CFG_SCANNING_MODE, x)
+            putString(Const.CFG_TLS_KEYSTORE, binding.keystorePath.text.toString())
+            putString(Const.CFG_TLS_KEYSTORE_PASSWORD, binding.keystorePassword.text.toString())
             apply()
         }
         startActivity(Intent(this, MainActivity::class.java))
