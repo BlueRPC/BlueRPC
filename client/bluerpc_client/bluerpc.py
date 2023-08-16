@@ -66,23 +66,28 @@ class BlueRPC:
                 handlers=[self._on_service_state_change],
             )
 
-    async def connect(self):
+    async def connect(self) -> bool:
         """
         Connect to the bluerpc server
         If the connection fails, automatically retry if possible
 
+        Returns:
+            bool: if success
+
         Raises:
             grpc.aio._call.AioRpcError if connection failed and retry is not possible
         """
-        await self._connect_impl()
+        return (await self._connect_impl())
 
-    async def _connect_impl(self, reconnect=False):
+    async def _connect_impl(self, reconnect=False) -> bool:
         """
         Internal connection implementation
         Will try to connect using secure or insecure channel and send a HelloRequest
 
         Args:
             reconnect: if this is a reconnect try or the first connection
+        Returns:
+            bool: if success
         Raises:
             grpc.aio._call.AioRpcError if failed to connect
         """
@@ -93,9 +98,7 @@ class BlueRPC:
                     self._key,
                     self._cert,
                 )
-                self._channel = services_pb2_grpc.BlueRPCStub(
-                    grpc.aio.secure_channel(f"{self._host}:{self._port}", creds)
-                )
+                self._channel = grpc.aio.secure_channel(f"{self._host}:{self._port}", creds)
             else:
                 self._channel = grpc.aio.insecure_channel(f"{self._host}:{self._port}")
 
@@ -115,6 +118,7 @@ class BlueRPC:
                 self.call_callbacks(ClientEvent.RECONNECT_FAILURE)
             if self._reconnect_enabled:
                 await self._schedule_reconnect()
+                return False
             else:
                 raise error
 
@@ -125,6 +129,7 @@ class BlueRPC:
             self._name = self.settings.name
         if reconnect:
             self.call_callbacks(ClientEvent.RECONNECT_SUCCESS)
+        return True
 
     async def set_keystore(
         self, data: bytes, overwrite: bool = True, restart: bool = True
