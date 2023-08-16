@@ -4,7 +4,7 @@ from importlib.metadata import version
 
 import grpc
 from bluerpc_client.rpc import common_pb2, services_pb2_grpc
-from bluerpc_client.utils import ClientEvent, BlueRPCConnectionError
+from bluerpc_client.utils import BlueRPCConnectionError, ClientEvent
 from zeroconf import ServiceStateChange, Zeroconf
 from zeroconf.asyncio import AsyncServiceBrowser
 
@@ -12,6 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_RETRIES = 50
 BACKOFF_BASE = 1.3
+
 
 class BlueRPC:
     def __init__(
@@ -76,7 +77,7 @@ class BlueRPC:
         Raises:
             BlueRPCConnectionError if connection failed and retry is not possible
         """
-        return (await self._connect_impl())
+        return await self._connect_impl()
 
     async def _connect_impl(self, reconnect=False) -> bool:
         """
@@ -97,7 +98,9 @@ class BlueRPC:
                     self._key,
                     self._cert,
                 )
-                self._channel = grpc.aio.secure_channel(f"{self._host}:{self._port}", creds)
+                self._channel = grpc.aio.secure_channel(
+                    f"{self._host}:{self._port}", creds
+                )
             else:
                 self._channel = grpc.aio.insecure_channel(f"{self._host}:{self._port}")
 
@@ -215,7 +218,9 @@ class BlueRPC:
         )
         if self._reconnect_timer:
             self._reconnect_timer.cancel()
-        self._reconnect_timer = self._loop.call_later(delay, self._connect_impl_sync, True)
+        self._reconnect_timer = self._loop.call_later(
+            delay, self._connect_impl_sync, True
+        )
 
     def _on_service_state_change(
         self,

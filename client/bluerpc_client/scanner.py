@@ -8,7 +8,11 @@ from typing import Dict, List
 
 import grpc
 from bluerpc_client.rpc import common_pb2, gatt_pb2
-from bluerpc_client.utils import ClientEvent, BlueRPCInvalidReturnCode, BlueRPCConnectionError
+from bluerpc_client.utils import (
+    BlueRPCConnectionError,
+    BlueRPCInvalidReturnCode,
+    ClientEvent,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -70,7 +74,9 @@ class BlueRPCBLEScanner:
                 asyncio.create_task(self._scan_handler())
                 return True
             else:
-                raise BlueRPCInvalidReturnCode(f"scanner connect error: {resp.message} (code {resp.code})")
+                raise BlueRPCInvalidReturnCode(
+                    f"scanner connect error: {resp.message} (code {resp.code})"
+                )
         except grpc.aio._call.AioRpcError as e:
             if self._reconnect:
                 # if connection failed, create scan handler, the conn will fail
