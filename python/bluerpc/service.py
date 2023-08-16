@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 import time
+import logging
 
 import grpc
 from bluerpc.ble_conn import BLEConn
@@ -11,6 +12,7 @@ from bluerpc.rpc import common_pb2, gatt_pb2, services_pb2_grpc
 from bluerpc.utils import get_net_mac, get_version
 
 START_TIME = time.time()
+_LOGGER = logging.getLogger("bluerpc")
 
 
 class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
@@ -53,6 +55,7 @@ class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
                 code=common_pb2.ERROR_CODE_KEYSTORE_ALREADY_EXISTS
             )
         try:
+            _LOGGER.debug("saving new keystore in %s", self._keystore_path)
             with open(self._keystore_path, "wb") as f:
                 f.write(request.data)
         except Exception as e:
@@ -67,7 +70,11 @@ class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
         )
 
     def restart(self):
-        os.execv(sys.executable, ['python'] + sys.argv)
+        args = []
+        for i in sys.argv:
+            if i != "--insecure":
+                args.append(i)
+        os.execv(sys.executable, ['python'] + args)
 
     async def BLEScanStart(
         self, request: gatt_pb2.BLEScanRequest, context: grpc.aio.ServicerContext

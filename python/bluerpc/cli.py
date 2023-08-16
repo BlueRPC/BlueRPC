@@ -42,9 +42,10 @@ async def serve(
     """
     server = grpc.aio.server(interceptors=[AsyncLoggingInterceptor()])
     services_pb2_grpc.add_BlueRPCServicer_to_server(
-        BlueRPCService(name, adapter_mac, adapter_id), server
+        BlueRPCService(name, adapter_mac, adapter_id, keystore), server
     )
 
+    secure = True
     if keystore and os.path.exists(keystore) and keystore_password:
         try:
             with open(keystore, "rb") as f:
@@ -70,11 +71,15 @@ async def serve(
         except FileNotFoundError:
             _LOGGER.warn("keystore not found, starting in insecure mode")
             server.add_insecure_port(bind_addr)
+        except ValueError as e:
+            _LOGGER.warn("keystore error: %s, starting in insecure mode", e)
+            server.add_insecure_port(bind_addr)
     else:
+        secure = False
         server.add_insecure_port(bind_addr)
 
     await server.start()
-    _LOGGER.info(f"BlueRPC worker running on {bind_addr}")
+    _LOGGER.info(f"BlueRPC worker running on {bind_addr} secured:{secure}")
 
     await start_discovery(bind_addr, name, adapter_mac)
 
@@ -100,7 +105,7 @@ def run():
         "--bind_addr",
         type=str,
         help="bind address of the server",
-        default="[::]:50052",
+        default="[::]:5052",
         nargs="?",
     )
     parser.add_argument(

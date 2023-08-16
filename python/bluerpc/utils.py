@@ -62,7 +62,9 @@ def get_appdata_dir() -> Path:
     else:
         p = os.getenv("XDG_DATA_HOME", "~/.local/share")
 
-    return Path(p).expanduser().joinpath("bluerpc")
+    path = Path(p).expanduser().joinpath("bluerpc")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def get_version() -> str:
