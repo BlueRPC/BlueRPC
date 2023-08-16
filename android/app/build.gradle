@@ -16,7 +16,8 @@ android {
     defaultConfig {
         applicationId "com.bluerpc.worker"
         minSdk 19
-        targetSdk 33
+        targetSdk 34
+        compileSdk 34
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -58,20 +59,20 @@ protobuf {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.10.0'
+    implementation 'androidx.core:core-ktx:1.10.1'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1"
-    implementation 'androidx.fragment:fragment-ktx:1.5.7'
+    implementation 'androidx.fragment:fragment-ktx:1.6.1'
 
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'javax.annotation:javax.annotation-api:1.3.2'
 
-    implementation 'io.grpc:grpc-okhttp:1.48.1'
-    implementation 'io.grpc:grpc-netty:1.48.1'
+    implementation 'io.grpc:grpc-okhttp:1.49.1'
     implementation 'io.grpc:grpc-protobuf-lite:1.48.1'
     implementation 'io.grpc:grpc-stub:1.48.1'
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.67'
     implementation 'no.nordicsemi.android.support.v18:scanner:1.6.0'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.5.3'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.5.3'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.0'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.7.0'
 }

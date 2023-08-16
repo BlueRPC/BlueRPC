@@ -50,4 +50,5 @@ object Const {
      * Keystore Password
      */
     const val CFG_TLS_KEYSTORE_PASSWORD = "keystorePassword"
+    const val KEYSTORE_DEFAULT_PATH = "bluerpc.p12"
 }

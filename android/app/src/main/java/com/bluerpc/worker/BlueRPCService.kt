@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.bluerpc.rpc.BLEConnectRequest
 import com.bluerpc.rpc.BLEConnectResponse
@@ -121,7 +122,7 @@ class BlueRPCService(private val ctx: Context): BlueRPCImplBase() {
                     }
                 }
             }
-            val ksFile = File(ctx.filesDir.path + "/bluerpc.p12")
+            val ksFile = File(ctx.filesDir.path + "/" + Const.KEYSTORE_DEFAULT_PATH)
 
             if(ksFile.exists()) {
                 if (!request.overwrite) {
@@ -138,6 +139,7 @@ class BlueRPCService(private val ctx: Context): BlueRPCImplBase() {
             val fos = FileOutputStream(ksFile)
             fos.write(request.data.toByteArray())
             fos.close()
+            Log.d("BlueRPC", "new keystore installed at $ksFile")
 
             responseObserver?.onNext(StatusMessage.newBuilder().setCode(ErrorCode.ERROR_CODE_OK).build())
             responseObserver?.onCompleted()

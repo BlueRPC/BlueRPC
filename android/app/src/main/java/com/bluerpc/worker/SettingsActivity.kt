@@ -6,11 +6,13 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.bluerpc.worker.databinding.ActivitySettingsBinding
+import java.io.File
 
 /**
  * Settings Activity
@@ -31,6 +33,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.name.setText(sharedPref.getString(Const.CFG_NAME, Build.MODEL))
         binding.port.setText(sharedPref.getInt(Const.CFG_PORT, Const.CFG_PORT_DEFAULT).toString())
         binding.mdns.isChecked = sharedPref.getBoolean(Const.CFG_ENABLE_MDNS, Const.CFG_ENABLE_MDS_DEFAULT)
+        binding.tls.isChecked = sharedPref.getBoolean(Const.CFG_TLS_ENABLE, Const.CFG_TLS_ENABLE_DEFAULT)
         binding.keystorePath.text = sharedPref.getString(Const.CFG_TLS_KEYSTORE, Const.CFG_TLS_KEYSTORE_DEFAULT)
         binding.keystorePassword.setText(sharedPref.getString(Const.CFG_TLS_KEYSTORE_PASSWORD, ""))
 
@@ -49,11 +52,6 @@ class SettingsActivity : AppCompatActivity() {
                 Const.CFG_SCANNING_MODE_IGNORE -> binding.ignoreBgLimits.isChecked = true
                 else -> binding.doNothing.isChecked = true
             }
-        }
-
-        if(sharedPref.getString(Const.CFG_TLS_KEYSTORE, Const.CFG_TLS_KEYSTORE_DEFAULT) != Const.CFG_TLS_KEYSTORE_DEFAULT) {
-            binding.tls.isEnabled = true
-            binding.tls.isChecked = sharedPref.getBoolean(Const.CFG_TLS_ENABLE, Const.CFG_TLS_ENABLE_DEFAULT)
         }
 
         binding.add.setOnClickListener {
@@ -75,6 +73,11 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.resetKeystore.setOnClickListener {
             binding.keystorePath.text = Const.CFG_TLS_KEYSTORE_DEFAULT
+            val ksFile = File(applicationContext.filesDir.path + "/" + Const.KEYSTORE_DEFAULT_PATH)
+            if(ksFile.exists()) {
+                ksFile.delete()
+            }
+            Toast.makeText(applicationContext, "Keystore reseted", Toast.LENGTH_SHORT).show()
         }
 
     }
@@ -119,6 +122,7 @@ class SettingsActivity : AppCompatActivity() {
             else if(binding.forceScreenOn.isChecked)
                 x = Const.CFG_SCANNING_MODE_SCREEN_ON
             putInt(Const.CFG_SCANNING_MODE, x)
+            putBoolean(Const.CFG_TLS_ENABLE, binding.tls.isChecked)
             putString(Const.CFG_TLS_KEYSTORE, binding.keystorePath.text.toString())
             putString(Const.CFG_TLS_KEYSTORE_PASSWORD, binding.keystorePassword.text.toString())
             apply()

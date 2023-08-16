@@ -18,13 +18,20 @@ import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import io.grpc.InsecureServerCredentials
 import io.grpc.Server
-import io.grpc.netty.NettyServerBuilder
-import io.grpc.netty.GrpcSslContexts
-import java.io.File
+import io.grpc.TlsServerCredentials
+import io.grpc.okhttp.OkHttpServerBuilder
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter
+import org.bouncycastle.openssl.jcajce.JcaPKCS8Generator
+import java.io.ByteArrayInputStream
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.IOException
 import java.io.InputStream
+import java.io.StringWriter
 import java.security.KeyStore
-
+import java.security.PrivateKey
 
 class ForegroundService: Service() {
     private var wakeLock: WakeLock? = null
@@ -46,29 +53,63 @@ class ForegroundService: Service() {
         startForeground(1001, notification)
 
         Log.d("BlueRPC", "Starting server ...")
-        val builder = NettyServerBuilder
-            .forPort(sharedPref.getInt(Const.CFG_PORT, Const.CFG_PORT_DEFAULT))
-            .addService(BlueRPCService(applicationContext))
+
+        var serverCreds = InsecureServerCredentials.create()
 
         if(sharedPref.getBoolean(Const.CFG_TLS_ENABLE, Const.CFG_TLS_ENABLE_DEFAULT)) {
             var ksPath = sharedPref.getString(Const.CFG_TLS_KEYSTORE, Const.CFG_TLS_KEYSTORE_DEFAULT)
-            if(ksPath == Const.CFG_TLS_KEYSTORE_DEFAULT)
-                ksPath = filesDir.path + "/bluerpc.p12"
-            var ksPass = sharedPref.getString(Const.CFG_TLS_KEYSTORE_PASSWORD, "")
+            if (ksPath == Const.CFG_TLS_KEYSTORE_DEFAULT)
+                ksPath = filesDir.path + "/" + Const.KEYSTORE_DEFAULT_PATH
+            val ksPass = sharedPref.getString(Const.CFG_TLS_KEYSTORE_PASSWORD, "")
 
-            val ks: KeyStore = KeyStore.getInstance("PKCS12")
-            val ksFile: InputStream = openFileInput(ksPath)
-            ks.load(ksFile, ksPass?.toCharArray())
-            ksFile.close()
+            try {
+                val ks: KeyStore = KeyStore.getInstance("PKCS12")
+                Log.d("BlueRPC", "trying to load keystore at $ksPath")
+                val ksFile: InputStream = FileInputStream(ksPath)
+                ks.load(ksFile, ksPass?.toCharArray())
+                ksFile.close()
 
-            val sslContext = GrpcSslContexts
-                .forServer(File(ks.getCertificate("bluerpc").publicKey.encoded.toString()), File(ks.getKey("bluerpc", ksPass?.toCharArray()).encoded.toString()))
-                .trustManager(File(ks.getCertificateChain("bluerpc")[0].publicKey.encoded.toString()))
-                .build()
-            builder.sslContext(sslContext)
+                val cert = StringWriter()
+                var pw = JcaPEMWriter(cert)
+                pw.writeObject(ks.getCertificate("bluerpc"))
+                pw.close()
+                cert.close()
+
+                val key = StringWriter()
+                pw = JcaPEMWriter(key)
+                pw.writeObject(JcaPKCS8Generator(
+                    ks.getKey("bluerpc", ksPass?.toCharArray()) as PrivateKey, null
+                ))
+                pw.close()
+                key.close()
+
+                val caCert = StringWriter()
+                pw = JcaPEMWriter(caCert)
+                pw.writeObject(ks.getCertificateChain("bluerpc")[0])
+                pw.close()
+                caCert.close()
+
+                serverCreds = TlsServerCredentials.newBuilder()
+                    .trustManager(ByteArrayInputStream(caCert.toString().toByteArray()))
+                    .keyManager(ByteArrayInputStream(
+                        cert.toString().toByteArray()),
+                        ByteArrayInputStream(key.toString().toByteArray())
+                    )
+                    .build()
+                Log.d("BlueRPC", "starting in secure mode")
+            } catch (e: FileNotFoundException) {
+                Log.d("BlueRPC", "Keystore not found")
+            } catch (e: IOException) {
+                Log.d("BlueRPC", "Invalid keystore password")
+            } catch (e: Exception) {
+                Log.d("BlueRPC", "Keystore error: $e")
+            }
         }
 
-        server = builder.build()
+        server = OkHttpServerBuilder
+            .forPort(sharedPref.getInt(Const.CFG_PORT, Const.CFG_PORT_DEFAULT), serverCreds)
+            .addService(BlueRPCService(applicationContext))
+            .build()
         server.start()
 
         if(sharedPref.getBoolean(Const.CFG_ENABLE_MDNS, Const.CFG_ENABLE_MDS_DEFAULT)) {

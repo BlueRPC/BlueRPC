@@ -12,5 +12,6 @@ __pycache__
 *.pem
 *.srl
 *.pfx
+keys.json
 test/home-assistant/data
 bluerpc.apk*
