@@ -130,13 +130,13 @@ cert-ca:
 cert-worker:
 	openssl req -newkey rsa:4096 -nodes -keyout certs/worker-key.pem -out certs/worker-req.pem -subj "/O=BlueRPC/OU=BlueRPC/CN=localhost"
 	openssl x509 -req -in certs/worker-req.pem -days 10000 -CA certs/ca-cert.pem -CAkey certs/ca-key.pem -CAcreateserial -out certs/worker-cert.pem -extfile certs/worker-san.conf
-	openssl pkcs12 -export -nodes -inkey certs/worker-key.pem -in certs/worker-cert.pem -caname ca -certfile certs/ca-cert.pem -passout pass: -out certs/worker.pfx
+	openssl pkcs12 -export -nodes -inkey certs/worker-key.pem -in certs/worker-cert.pem -caname ca -certfile certs/ca-cert.pem -passout pass:password -out certs/worker.pfx
 	rm certs/worker-*.pem
 
 cert-client:
 	openssl req -newkey rsa:4096 -nodes -keyout certs/client-key.pem -out certs/client-req.pem -subj "/O=BlueRPC/OU=BlueRPC/CN=*"
 	openssl x509 -req -in certs/client-req.pem -days 10000 -CA certs/ca-cert.pem -CAkey certs/ca-key.pem -CAcreateserial -out certs/client-cert.pem
-	openssl pkcs12 -export -nodes -inkey certs/client-key.pem -in certs/client-cert.pem -caname ca -certfile certs/ca-cert.pem -passout pass: -out certs/client.pfx
+	openssl pkcs12 -export -nodes -inkey certs/client-key.pem -in certs/client-cert.pem -caname ca -certfile certs/ca-cert.pem -passout pass:password -out certs/client.pfx
 	rm certs/client-*.pem
 
 cert-worker-clean:

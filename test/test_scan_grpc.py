@@ -11,20 +11,21 @@ async def test_scan(client: services_pb2_grpc.BlueRPCStub):
     async for response in client.BLEReceiveScan(common_pb2.Void()):
         if response.status.code == common_pb2.ERROR_CODE_SCAN_STOPPED:
             return
-        nb += 1
         assert response.status.code == common_pb2.ERROR_CODE_OK
-        assert response.time > 0
-        assert response.device.mac != "" or response.device.uuid != ""
-        print(
-            f"mac: {response.device.mac} name: {response.name} rssi: {response.rssi} time: {response.time}"
-        )
-        print(f"\t service_data: {response.service_data}")
-        print(f"\t manufacturer_data: {response.manufacturer_data}")
+        for i in response.data:
+            nb += 1
+            assert i.time > 0
+            assert i.device.mac != "" or i.device.uuid != ""
+            print(
+                f"mac: {i.device.mac} name: {i.name} rssi: {i.rssi} time: {i.time}"
+            )
+            print(f"\t service_data: {i.service_data}")
+            print(f"\t manufacturer_data: {i.manufacturer_data}")
 
-        if nb > 4:
-            x = await client.BLEScanStop(common_pb2.Void())
-            assert x.code == common_pb2.ERROR_CODE_OK
-            return
+            if nb > 4:
+                x = await client.BLEScanStop(common_pb2.Void())
+                assert x.code == common_pb2.ERROR_CODE_OK
+                return
 
 
 async def test_scan_filter_service(client: services_pb2_grpc.BlueRPCStub):
@@ -42,12 +43,13 @@ async def test_scan_filter_service(client: services_pb2_grpc.BlueRPCStub):
     async for response in client.BLEReceiveScan(common_pb2.Void()):
         if response.status.code == common_pb2.ERROR_CODE_SCAN_STOPPED:
             return
-        nb += 1
         assert response.status.code == common_pb2.ERROR_CODE_OK
-        print(f"mac: {response.device.mac} rssi: {response.rssi} time: {response.time}")
-        if nb == 2:
-            x = await client.BLEScanStop(common_pb2.Void())
-            assert x.code == common_pb2.ERROR_CODE_OK
+        for i in response.data:
+            nb += 1
+            print(f"mac: {i.device.mac} rssi: {i.rssi} time: {i.time}")
+            if nb == 2:
+                x = await client.BLEScanStop(common_pb2.Void())
+                assert x.code == common_pb2.ERROR_CODE_OK
 
 
 async def test_scan_filter_mac(
@@ -66,9 +68,10 @@ async def test_scan_filter_mac(
     async for response in client.BLEReceiveScan(common_pb2.Void()):
         if response.status.code == common_pb2.ERROR_CODE_SCAN_STOPPED:
             return
-        nb += 1
         assert response.status.code == common_pb2.ERROR_CODE_OK
-        print(f"mac: {response.device.mac} rssi: {response.rssi} time: {response.time}")
-        if nb == 2:
-            x = await client.BLEScanStop(common_pb2.Void())
-            assert x.code == common_pb2.ERROR_CODE_OK
+        for i in response.data:
+            nb += 1
+            print(f"mac: {i.device.mac} rssi: {i.rssi} time: {i.time}")
+            if nb == 2:
+                x = await client.BLEScanStop(common_pb2.Void())
+                assert x.code == common_pb2.ERROR_CODE_OK
