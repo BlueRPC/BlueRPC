@@ -80,7 +80,8 @@ android-docs:
 
 client-proto: proto/*
 	$(PYTHON) -m grpc_tools.protoc --python_out=client/bluerpc_client --grpc_python_out=client/bluerpc_client --proto_path=proto $(FILES)
-	find client/bluerpc_client/rpc -type f | xargs sed -i 's/from rpc import/from . import/g'
+	touch client/bluerpc_client/rpc/__init__.py
+	find client/bluerpc_client/rpc -type f | xargs sed -i 's/from rpc import/from bluerpc_client.rpc import/g'
 
 client-lint: client/*
 	isort client/bluerpc_client/ --check --profile=black --skip=rpc
