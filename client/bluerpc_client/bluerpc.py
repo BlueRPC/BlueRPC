@@ -4,7 +4,7 @@ from importlib.metadata import version
 
 import grpc
 from bluerpc_client.rpc import common_pb2, services_pb2_grpc
-from bluerpc_client.utils import ClientEvent
+from bluerpc_client.utils import ClientEvent, BlueRPCConnectionError
 from zeroconf import ServiceStateChange, Zeroconf
 from zeroconf.asyncio import AsyncServiceBrowser
 
@@ -12,7 +12,6 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_RETRIES = 50
 BACKOFF_BASE = 1.3
-
 
 class BlueRPC:
     def __init__(
@@ -75,7 +74,7 @@ class BlueRPC:
             bool: if success
 
         Raises:
-            grpc.aio._call.AioRpcError if connection failed and retry is not possible
+            BlueRPCConnectionError if connection failed and retry is not possible
         """
         return (await self._connect_impl())
 
@@ -89,7 +88,7 @@ class BlueRPC:
         Returns:
             bool: if success
         Raises:
-            grpc.aio._call.AioRpcError if failed to connect
+            BlueRPCConnectionError if failed to connect
         """
         try:
             if self._ca_cert and self._cert and self._key:
@@ -115,12 +114,12 @@ class BlueRPC:
         except grpc.aio._call.AioRpcError as error:
             _LOGGER.debug("bluerpc client can't connect: " + error.details())
             if reconnect:
-                self.call_callbacks(ClientEvent.RECONNECT_FAILURE)
+                await self._call_callbacks(ClientEvent.RECONNECT_FAILURE)
             if self._reconnect_enabled:
                 await self._schedule_reconnect()
                 return False
             else:
-                raise error
+                raise BlueRPCConnectionError(error)
 
         self.connected = True
         self._reconnect_retries = 0
@@ -128,7 +127,7 @@ class BlueRPC:
         if not self._name:
             self._name = self.settings.name
         if reconnect:
-            self.call_callbacks(ClientEvent.RECONNECT_SUCCESS)
+            await self._call_callbacks(ClientEvent.RECONNECT_SUCCESS)
         return True
 
     async def set_keystore(
@@ -207,7 +206,7 @@ class BlueRPC:
         self._reconnect_retries += 1
         if self._reconnect_retries > MAX_RETRIES:
             _LOGGER.error("connection failed, max number of retries reached")
-            self._call_callbacks(ClientEvent.RECONNECT_ABORT)
+            await self._call_callbacks(ClientEvent.RECONNECT_ABORT)
             return
 
         delay = BACKOFF_BASE**self._reconnect_retries
@@ -216,9 +215,9 @@ class BlueRPC:
         )
         if self._reconnect_timer:
             self._reconnect_timer.cancel()
-        self._reconnect_timer = self._loop.call_later(delay, self._connect_impl, True)
+        self._reconnect_timer = self._loop.call_later(delay, self._connect_impl_sync, True)
 
-    async def _on_service_state_change(
+    def _on_service_state_change(
         self,
         zeroconf: Zeroconf,
         service_type: str,
@@ -232,7 +231,7 @@ class BlueRPC:
                 state_change == ServiceStateChange.Added
                 or state_change == ServiceStateChange.Updated
             )
-            and name == self._name
+            and name == f"{self._name}._bluerpc._tcp.local."
             and self._reconnect_timer
         ):
             # if this device has been discovered and that a connection retry is in scheduled, cancel it and run it immediately
@@ -240,7 +239,7 @@ class BlueRPC:
                 f"{name} zeroconf entry {'added' if state_change == ServiceStateChange else 'updated'}, retrying connection now"
             )
             self._reconnect_timer.cancel()
-            self._loop.call_soon_threadsafe(self._connect_impl, True)
+            asyncio.run_coroutine_threadsafe(self._connect_impl(True), self._loop)
 
     async def stop(self):
         """Disconnect and delete client"""
@@ -272,3 +271,6 @@ class BlueRPC:
         """
         for i in self._callbacks:
             await i(type)
+
+    def _connect_impl_sync(self, *args):
+        asyncio.create_task(self._connect_impl(*args))

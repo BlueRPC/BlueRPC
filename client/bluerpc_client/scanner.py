@@ -8,7 +8,7 @@ from typing import Dict, List
 
 import grpc
 from bluerpc_client.rpc import common_pb2, gatt_pb2
-from bluerpc_client.utils import ClientEvent
+from bluerpc_client.utils import ClientEvent, BlueRPCInvalidReturnCode, BlueRPCConnectionError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,12 +43,12 @@ class BlueRPCBLEScanner:
                 gatt_pb2.BLEScanFilter(type=gatt_pb2.BLE_SCAN_FILTER_TYPE_UUID, value=i)
             )
         self._reconnect = reconnect
-        self._client.register_callback(self._on_client_event)
         self._connect_lock = asyncio.Lock()
         self._reconnect_aborted = False
 
     async def start(self) -> bool:
         """Start the scanner"""
+        await self._client.register_callback(self._on_client_event)
         await self._connect_lock.acquire()
         return await self._start_impl()
 
@@ -70,12 +70,14 @@ class BlueRPCBLEScanner:
                 asyncio.create_task(self._scan_handler())
                 return True
             else:
-                _LOGGER.error(
-                    f"scanner connect error: {resp.message} (code {resp.code})"
-                )
+                raise BlueRPCInvalidReturnCode(f"scanner connect error: {resp.message} (code {resp.code})")
         except grpc.aio._call.AioRpcError as e:
-            await self._client.on_disconnect_err(e)
-            raise e
+            if self._reconnect:
+                # if connection failed, create scan handler, the conn will fail
+                # and go in the except block to ask for reconnect and wait until connected
+                asyncio.create_task(self._scan_handler())
+            else:
+                raise BlueRPCConnectionError(e)
 
         return False
 
@@ -94,7 +96,7 @@ class BlueRPCBLEScanner:
     async def _scan_handler(self):
         """Background task to receive the bluetooth advertisements"""
         try:
-            async for response in self._client.BLEReceiveScan(common_pb2.Void()):
+            async for response in self._client.conn.BLEReceiveScan(common_pb2.Void()):
                 if response.status.code == common_pb2.ERROR_CODE_SCAN_STOPPED:
                     # auto restart ?
                     await self.stop()
@@ -108,11 +110,12 @@ class BlueRPCBLEScanner:
                     )
         except grpc.aio._call.AioRpcError as e:
             if self._reconnect:
+                await self._client.on_disconnect_err(e)
                 await self._connect_lock.acquire()
                 if self._reconnect_aborted:
                     raise e
                 else:
-                    self._start_impl()
+                    await self._start_impl()
             else:
                 await self._client.on_disconnect_err(e)
                 if self._on_disconnect is not None:
