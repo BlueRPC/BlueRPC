@@ -100,7 +100,6 @@ jobs:
           platforms: |
             linux/amd64
             linux/arm64
-            linux/arm/v7
           tags: |
             ghcr.io/bluerpc/worker:${{github.ref_name}}
             ghcr.io/bluerpc/worker:latest
