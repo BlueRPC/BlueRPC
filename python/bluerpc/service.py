@@ -213,16 +213,14 @@ class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
             data = []
             try:
                 while True:
-                    data.append(
-                        (await BLEScanner.scan_queues[context.peer()].get_nowait())
-                    )
+                    data.append(BLEScanner.scan_queues[context.peer()].get_nowait())
             except asyncio.QueueEmpty:
                 pass
             yield gatt_pb2.BLEScanResponse(
                 status=common_pb2.StatusMessage(code=common_pb2.ERROR_CODE_OK),
                 data=data,
             )
-            await asyncio.sleep(self._ble_scanner.interval)
+            await asyncio.sleep(self._ble_scanner.interval / 1000)
         yield gatt_pb2.BLEScanResponse(
             status=common_pb2.StatusMessage(code=common_pb2.ERROR_CODE_SCAN_STOPPED)
         )
