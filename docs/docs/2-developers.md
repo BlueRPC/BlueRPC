@@ -64,7 +64,7 @@ A few testing scripts are available for the project.
 
 These scripts are running real bluetooth commands against bluetooth devices, currently there is a test for the miflora sensor and the switchbot bot. There is also a test for scanning and discovery.
 
-You can run these tests with a command like this `pytest ./test_scan_grpc.py::test_scan --url="127.0.0.1:50052"`.
+You can run these tests with a command like this `pytest ./test_scan_grpc.py::test_scan --url="127.0.0.1:5052"`.
 
 To test using encryption, use `make certs` to generate certificates and use `--keystore=../certs/client.pfx` for the test script and `certs/worker.pfx` for the worker.
 

@@ -23,7 +23,7 @@ _LOGGER = logging.getLogger("bluerpc")
 
 
 async def serve(
-    bind_addr="[::]:50052",
+    bind_addr="[::]:5052",
     name="unknown",
     keystore=get_appdata_dir().joinpath("keystore.pfx"),
     keystore_password=None,

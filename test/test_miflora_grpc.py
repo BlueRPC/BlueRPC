@@ -5,7 +5,7 @@ SERVICE_UUID = "00001204-0000-1000-8000-00805f9b34fb"
 W_CHR_UUID = "00001a00-0000-1000-8000-00805f9b34fb"
 R_CHR_UUID = "00001a01-0000-1000-8000-00805f9b34fb"
 
-# py.test.exe .\test_miflora_grpc.py --mac="AA:BB:CC:DD:EE:FF" --url="127.0.0.1:50052" -v -s
+# py.test.exe .\test_miflora_grpc.py --mac="AA:BB:CC:DD:EE:FF" --url="127.0.0.1:5052" -v -s
 
 
 async def disconnect(

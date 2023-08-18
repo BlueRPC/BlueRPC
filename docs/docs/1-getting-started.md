@@ -24,6 +24,6 @@ You can install it using [HACS](https://hacs.xyz/):
 
 You need to repeat the third step for each worker.
 
-You need to fill in the IP address of the worker, the port (by default 50052 for python and 5052 for android) and the name of the worker. 
+You need to fill in the IP address of the worker, the port (by default 5052) and the name of the worker. 
 
 If autodiscovery is enabled, the workers will be detected automatically and you will just need to click the "configure" button to add them.

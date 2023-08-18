@@ -4,7 +4,7 @@ from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 
 async def start_discovery(
-    bind_addr: str = "[::]:50052",
+    bind_addr: str = "[::]:5052",
     name: str = "unknown",
     adapter_mac: str = "00:00:00:00:00:00",
 ) -> None:
