@@ -58,7 +58,7 @@ class BlueRPCBLEScanner:
 
         Args:
             active: if we need to use active scan
-            interval: scan interval in miliseconds        
+            interval: scan interval in miliseconds
         """
         self._scan_active = active
         self._scan_interval = interval
