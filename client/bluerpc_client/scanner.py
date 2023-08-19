@@ -49,9 +49,19 @@ class BlueRPCBLEScanner:
         self._reconnect = reconnect
         self._connect_lock = asyncio.Lock()
         self._reconnect_aborted = False
+        self._scan_active = True
+        self._scan_interval = 2000
 
-    async def start(self) -> bool:
-        """Start the scanner"""
+    async def start(self, active=True, interval=2000) -> bool:
+        """
+        Start the scanner
+
+        Args:
+            active: if we need to use active scan
+            interval: scan interval in miliseconds        
+        """
+        self._scan_active = active
+        self._scan_interval = interval
         await self._client.register_callback(self._on_client_event)
         await self._connect_lock.acquire()
         return await self._start_impl()
@@ -61,8 +71,8 @@ class BlueRPCBLEScanner:
         try:
             resp = await self._client.conn.BLEScanStart(
                 gatt_pb2.BLEScanRequest(
-                    interval=2000,
-                    active=True,
+                    interval=self._scan_interval,
+                    active=self._scan_active,
                     filters=self._filters,
                     merge_filters=self._client.settings.ble_filters_required,
                 )
@@ -136,7 +146,7 @@ class BlueRPCBLEScanner:
             self._connect_lock.release()
 
 
-@dataclass(frozen=True)
+@dataclass
 class BlueRPCBLEAdvertisement:
     mac_address: str
     name: str
