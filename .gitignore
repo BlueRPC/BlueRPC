@@ -5,6 +5,7 @@ client/bluerpc_client/rpc
 client/dist
 client/bluerpc_client.egg-info
 test/rpc
+test/.hypothesis
 docs/site
 docs/docs/reference
 __pycache__
