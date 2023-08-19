@@ -1,8 +1,0 @@
-# Loads default set of integrations. Do not remove.
-default_config:
-
-logger:
-  default: warning
-  logs:
-    homeassistant.components.bluetooth: debug
-    custom_components.bluerpc: debug
