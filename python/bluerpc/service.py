@@ -207,7 +207,7 @@ class BlueRPCService(services_pb2_grpc.BlueRPCServicer):
     async def BLEReceiveScan(
         self, request: common_pb2.Void, context: grpc.aio.ServicerContext
     ) -> gatt_pb2.BLEScanResponse:
-        BLEScanner.scan_queues[context.peer()] = asyncio.Queue(20)
+        BLEScanner.scan_queues[context.peer()] = asyncio.Queue(100)
         context.add_done_callback(self.rpc_scan_disconnect)
         while self._ble_scanner.running:
             data = []
