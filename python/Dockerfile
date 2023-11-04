@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM alpine:latest
 
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential && pip install bluerpc
+RUN apk update && apk add python3 py3-pip python3-dev libffi-dev openssl-dev rust cargo && pip install bluerpc
 CMD ["bluerpc"]
