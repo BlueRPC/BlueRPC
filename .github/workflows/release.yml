@@ -81,25 +81,78 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: [build]
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm/v7
+          - linux/arm64
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
+      - name: Set cache name
+        id: cache-name
+        run: |
+          echo 'cache-name=worker-cache-${{ matrix.platform }}' | sed 's:/:-:g' >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          file: python/Dockerfile
+          platforms: ${{ matrix.platform }}
+          tags: |
+            ghcr.io/bluerpc/worker:${{github.ref_name}}
+            ghcr.io/bluerpc/worker:latest
+          cache-from: type=gha
+          cache-to: type=local,dest=/tmp/worker-cache,mode=max
+
+      - name: Upload cache
+        uses: actions/upload-artifact@v3
+        with:
+          name: worker-cache-${{ steps.cache-name.outputs.cache-name }}
+          path: /tmp/worker-cache
+          if-no-files-found: error
+          retention-days: 1
+
+  push:
+    runs-on: ubuntu-latest
+    needs: [docker]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Download cache
+        uses: actions/download-artifact@v3
+        with:
+          path: /tmp/worker-cache
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: python/Dockerfile
-          push: true
           platforms: |
             linux/amd64
+            linux/arm/v7
             linux/arm64
+          push: true
           tags: |
             ghcr.io/bluerpc/worker:${{github.ref_name}}
             ghcr.io/bluerpc/worker:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=gha,mode=max
