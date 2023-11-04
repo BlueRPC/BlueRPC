@@ -161,6 +161,7 @@ class BlueRPCBLEAdvertisement:
         self.mac_address = resp.device.mac
         self.rssi = resp.rssi
         self.txpwr = resp.txpwr
+        self.time = resp.time
         self.service_uuids = list(resp.service_uuids)
         self.service_data = {}
         for i in resp.service_data:
