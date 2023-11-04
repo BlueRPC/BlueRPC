@@ -28,7 +28,7 @@ setup(
         "netifaces",
         "zeroconf",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     project_urls={
         "Documentation": "https://bluerpc.github.io/",
         "Source": "https://github.com/BlueRPC/BlueRPC/tree/main/python",
